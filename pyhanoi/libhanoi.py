@@ -120,7 +120,7 @@ class Node(NodePrototype):
             new = (node, copy(history))
             self.history.append(new)
     
-    def _add_history(self, connection: Connection):
+    def add_history(self, connection: Connection):
         node, delta = connection
         self._copy_history(node)
         for _, log in self.history:
@@ -134,17 +134,13 @@ class Node(NodePrototype):
 
         if self.mods:
             for i,j in self.mods._get_mod_list(tsl):
-                _, delta = self.mods.data[j]
-                node_list[i]._connect((self, delta))
+                node_list[i]._connect(self)
                 rml.append(j)
         
             pop_list(rml, self.mods.data)
             
-    def _connect(self, connection: Connection):
-        node, delta = connection
-
+    def _connect(self, node: Node):
         self.connections.append(node)
-        self._add_history(connection)
         node.connections.append(self)
     
     def __repr__(self):
@@ -165,7 +161,8 @@ class Node(NodePrototype):
             tower_set, delta = mod
             node = Node(tower_set, self.graph)
 
-            node._connect((self, delta))
+            node._connect(self)
+            node.add_history((self, delta))
             self.graph.next_nodes.append(node)
 
 class ModList():
