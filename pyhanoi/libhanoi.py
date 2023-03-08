@@ -27,9 +27,10 @@ class Graph():
         self.all_nodes = lambda : self.current_nodes + self.next_nodes
 
     def _check_pinned(self, node: Node):
-        for term in self.pinned:
+        for index, term in enumerate(self.pinned):
             if term == node.data:
                 self.found_nodes.append(node)
+                self.pinned.pop(index)
 
     def _process_current(self):
         for node in self.current_nodes:
@@ -40,7 +41,7 @@ class Graph():
         self.next_nodes = []
     
     def process(self):
-        while self.current_nodes:
+        while self.current_nodes and self.pinned:
             self._process_current()
     
     def __repr__(self):
