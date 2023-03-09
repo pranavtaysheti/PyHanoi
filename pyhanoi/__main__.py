@@ -6,15 +6,17 @@ if TYPE_CHECKING:
     from pyhanoi.libhanoi import TowerSet
 
 WELCOME_MESSAGE = "Welcome to very over-engineered tower of hanoi solver!"
-QUES_TOWERS = "Enter the number of towers in hanoi:"
-QUES_RINGS = "Enter the number of rings in hanoi:"
+QUES_TOWERS = "Enter the number of towers in hanoi: "
+QUES_RINGS = "Enter the number of rings in hanoi: "
+
+BIG_DIVIDER = "="*72
+SMALL_DIVIDER = "-"*72
 
 def ask(ques: str) -> int:
     result: Optional[int] = None
     
     while not result:
-        print (ques)
-        inp = input()    
+        inp = input(ques)    
         try:
             result = int(inp)
         except ValueError:
@@ -42,6 +44,7 @@ if __name__ == "__main__":
     print(WELCOME_MESSAGE)
     towers = ask(QUES_TOWERS)
     rings = ask(QUES_RINGS)
+    print(SMALL_DIVIDER)
 
     start_tower = make_node(towers, rings)
     graph = Graph(start_tower, rings)
@@ -50,11 +53,13 @@ if __name__ == "__main__":
 
     if graph.found_nodes:
         node = graph.found_nodes[0]
-    
+        solutions = 0
+
         for history in node.history:
             n, log = history
             if n.data == start_tower:
+                solutions += 1
+                print ("Solution:", solutions, "Steps:", len(log))
+                print (SMALL_DIVIDER)
                 print_log(log)
-
-        
-
+                print (SMALL_DIVIDER)
