@@ -17,7 +17,7 @@ class TestGraph(unittest.TestCase):
         self.graph = libhanoi.Graph(self.node_data, self.rings)
 
     def test_init(self):
-        self.assertEqual(self.graph.latest_nodes[0].data, self.node_data)
+        self.assertEqual(self.graph.current_nodes[0].data, self.node_data)
 
 class TestNodePrototype(unittest.TestCase):
 

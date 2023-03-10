@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from itertools import permutations 
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Any, Callable, NoReturn
 from copy import deepcopy, copy
+from enum import Enum, auto
 
 class InvalidRingOrderError(Exception):
     pass
@@ -22,9 +23,10 @@ class Graph():
         self.pinned: List[TowerSet] = []
         self.found_nodes: List[Node] = []
         self.rings = rings
-        self.current_nodes: List[Node] = [Node(start, self)]
+        self.current_nodes: List[Node] = []
         self.next_nodes: List[Node] = []
-        self.all_nodes = lambda : self.current_nodes + self.next_nodes
+
+        self.current_nodes.append(Node(start, self))
 
     def _check_pinned(self, node: Node):
         for index, term in enumerate(self.pinned):
@@ -52,7 +54,11 @@ class Graph():
             "current_nodes": self.current_nodes,
             "next_nodes": self.next_nodes
         })
-    
+class NodeStage(Enum):
+    CURRENT = auto()
+    NEXT = auto()
+    PROTOTYPE = auto()
+
 class NodePrototype():
 
     def __init__(self, data: TowerSet):
@@ -102,6 +108,8 @@ def pop_list(index_list: List[int], item_list: List[Any]):
         item_list.pop(i)
 
 class Node(NodePrototype):
+    """ Node Class """
+
 
     def __init__(self, data: TowerSet, graph: Graph):
         super().__init__(data)
@@ -128,21 +136,30 @@ class Node(NodePrototype):
             log.append(delta)
         self.history.append((node, [delta]))
         
-    def _connect_existing(self):
-        node_list = self.graph.all_nodes()
-        tsl = [node.data for node in node_list]
+    def _connect_existing(self, nodes: List[Node], stage: NodeStage):
+        tsl = [node.data for node in nodes] 
         rml = []
 
-        if self.mods:
-            for i,j in self.mods._get_mod_list(tsl):
-                node_list[i]._connect(self)
-                rml.append(j)
+        if not self.mods:
+            return
         
-            pop_list(rml, self.mods.data)
-            
-    def _connect(self, node: Node):
+        for i,j in self.mods._get_mod_list(tsl):
+            tower_set, delta = self.mods.data[j]
+            nodes[i]._connect((self, delta), stage)
+            rml.append(j)
+    
+        pop_list(rml, self.mods.data)
+        
+    def _connect(self, connection: Connection, stage: NodeStage):
+        node, delta = connection
+        
         self.connections.append(node)
         node.connections.append(self)
+        
+        if stage != NodeStage.CURRENT:
+            self.add_history(connection)
+        if stage == NodeStage.PROTOTYPE:
+            self.graph.next_nodes.append(self)
     
     def __repr__(self):
         return repr({
@@ -153,18 +170,20 @@ class Node(NodePrototype):
 
     def propagate(self):
         self._generate()
-        self._connect_existing()
+        self._connect_existing(self.graph.current_nodes, NodeStage.CURRENT)
+        # self._connect_existing(self.graph.next_nodes, NodeStage.NEXT)
+        
         if not self.mods:
             return None
         
-        while self.mods.data:
-            mod = self.mods.data.pop()
-            tower_set, delta = mod
-            node = Node(tower_set, self.graph)
+        self.mods.filter_out([node.data for node in self.graph.next_nodes])
 
-            node._connect(self)
-            node.add_history((self, delta))
-            self.graph.next_nodes.append(node)
+        nodes = [Node(ts, self.graph) for ts, _ in self.mods.data]
+        for i, node in enumerate(nodes):
+            _, delta = self.mods.data[i]
+            node._connect((self, delta), NodeStage.PROTOTYPE)
+        
+        self.mods.data = []
 
 class ModList():
 
