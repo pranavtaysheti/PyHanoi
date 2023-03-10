@@ -29,10 +29,13 @@ class Graph():
         self.current_nodes.append(Node(start, self))
 
     def _check_pinned(self, node: Node):
+        rml: List[int] = []
         for index, term in enumerate(self.pinned):
             if term == node.data:
                 self.found_nodes.append(node)
-                self.pinned.pop(index)
+                rml.append(index)
+
+        pop_list(rml, self.pinned)
 
     def _process_current(self):
         for node in self.current_nodes:
@@ -123,17 +126,14 @@ class Node(NodePrototype):
         self.mods.generate()
         self.mods.filter_out([node.data for node in self.connections])
     
-    def _copy_history(self, node: Node):
-        for log in node.history:
-            node, history = log
-            new = (node, copy(history))
-            self.history.append(new)
-    
     def add_history(self, connection: Connection):
         node, delta = connection
-        self._copy_history(node)
-        for _, log in self.history:
-            log.append(delta)
+        for history in node.history:
+            node, log = history
+            new_log = copy(log)
+            new_log.append(delta)
+            new_history = (node, new_log)
+            self.history.append(new_history)
         self.history.append((node, [delta]))
         
     def _connect_existing(self, nodes: List[Node], stage: NodeStage):
@@ -171,12 +171,10 @@ class Node(NodePrototype):
     def propagate(self):
         self._generate()
         self._connect_existing(self.graph.current_nodes, NodeStage.CURRENT)
-        # self._connect_existing(self.graph.next_nodes, NodeStage.NEXT)
+        self._connect_existing(self.graph.next_nodes, NodeStage.NEXT)
         
         if not self.mods:
             return None
-        
-        self.mods.filter_out([node.data for node in self.graph.next_nodes])
 
         nodes = [Node(ts, self.graph) for ts, _ in self.mods.data]
         for i, node in enumerate(nodes):
