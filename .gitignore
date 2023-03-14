@@ -2,3 +2,4 @@ dev/
 *.code-workspace
 .venv/
 __pycache__/
+dist/*
