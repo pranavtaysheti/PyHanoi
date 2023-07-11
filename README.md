@@ -11,6 +11,14 @@ to state B.
 While the solution given should be correct - the time required to solve it
 increases exponentially, with more towers and rings.
 
+## Roadmap
+
+- [ ] Show all possible solutions instead of 1
+- [ ] Improve main.py
+  - [ ] Ability to manually define initial state
+- [ ] Optimizations:
+  - [ ] Ability to recognize symmetry during problem solving step.
+
 ## Installation
 
 soon will write a `setup.py`.
